@@ -1,0 +1,94 @@
+﻿html {
+    font-size: 14px;
+}
+
+@media (min-width: 768px) {
+    html {
+        font-size: 16px;
+    }
+}
+
+html {
+    position: relative;
+    min-height: 100%;
+}
+
+body {
+    margin-bottom: 60px;
+}
+
+
+.centerMainContainer {
+    max-width: 500px;
+    margin: auto;
+    width: 100%;
+    /* background-color: red;*/
+}
+
+/*------ FindFace -------*/
+
+.findFaceTopContainer {
+    background-color: orange;
+    /*height: 100px;*/
+}
+
+.findFaceBottomContainer {
+    /*    background-color: yellow;*/
+    height: 100px;
+}
+
+.findFaceResultContainer {
+    /* background-color: darkslategray;*/
+    height: 100%;
+    float: left;
+    width: 50%;
+}
+
+.findFacePhotoContainer {
+    display: none;
+    height: 100%;
+    float: left;
+    width: 50%;
+}
+
+    .findFacePhotoContainer > canvas {
+        width: 200px;
+        height: 200px;
+        background-color: white;
+        border: 1px solid red;
+    }
+
+.findFaceUploadPhoto {
+    cursor: pointer;
+    background-color: #55595c;
+    color: lightgray;
+    float: left;
+    width: 50%;
+    height: 200px;
+    width: 200px;
+    line-height: 200px;
+    text-align: center;
+    transition: color 2s ease;
+    transition: background-color 2s ease;
+}
+
+    .findFaceUploadPhoto::after {
+        content: url('/images/upload.svg')
+    }
+    /*    .findFaceUploadPhoto::before{
+    content:"123";
+}*/
+
+    .findFaceUploadPhoto p {
+        vertical-align: middle;
+    }
+
+    .findFaceUploadPhoto.dragover {
+        background-color: white;
+        color: #55595c;
+        border: dashed 5px #55595c;
+    }
+
+.search-btn, .cancel-btn {
+    display: none;
+}
