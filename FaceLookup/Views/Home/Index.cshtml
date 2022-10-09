@@ -45,6 +45,25 @@
         var minSelectionSize = 50;
         var canvaseMargin = 2;
 
+        function getElementByClassName(name)
+        {
+            var elements = document.getElementsByClassName(name);
+            if (elements === 0)
+                return null;
+
+            return elements[0];
+        }
+
+        function hideElement(element)
+        {
+            element.style.display = 'none';
+        }
+
+        function showElement(element)
+        {
+            element.style.display = 'block';
+        }
+
 
         function myDown(e) {
             e.preventDefault();
@@ -278,20 +297,20 @@
         function dragOverHandler(ev) {
             // Prevent default behavior (Prevent file from being opened)
             ev.preventDefault();
-            document.getElementsByClassName('findFaceUploadPhoto')[0].addClass('dragover');
+            getElementByClassName('findFaceUploadPhoto').addClass('dragover');
         }
 
         function dragLeaveHandler(ev) {
             // Prevent default behavior (Prevent file from being opened)
             ev.preventDefault();
-            document.getElementsByClassName('findFaceUploadPhoto')[0].removeClass('dragover');
+            getElementByClassName('findFaceUploadPhoto').removeClass('dragover');
         }
 
         function imageUploaded() {
-            document.getElementsByClassName('search-btn')[0].style.display = 'block';
-            document.getElementsByClassName('cancel-btn')[0].style.display = 'block';
-            document.getElementsByClassName('findFaceUploadPhoto')[0].style.display = 'none';
-            document.getElementsByClassName('findFacePhotoContainer')[0].style.display = 'block';
+            showElement(getElementByClassName('search-btn'));
+            showElement(getElementByClassName('cancel-btn'));
+            hideElement(getElementByClassName('findFaceUploadPhoto'));
+            showElement(getElementByClassName('findFacePhotoContainer'));
             updateCanvas();
         }
 
@@ -305,21 +324,21 @@
 
 
         function init() {
-            document.getElementsByClassName('search-btn')[0].addEventListener('click', () => { })
+            getElementByClassName('search-btn').addEventListener('click', () => { })
 
             var uploadElm = document.getElementById('upload-input');
-            document.getElementsByClassName('findFaceUploadPhoto')[0].addEventListener('click', () => {
+            getElementByClassName('findFaceUploadPhoto').addEventListener('click', () => {
                 uploadElm.click();
             });
 
-            document.getElementsByClassName('cancel-btn')[0].addEventListener('click', () => {
-                document.getElementsByClassName('findFaceUploadPhoto')[0].style.display = 'block';
-                document.getElementsByClassName('findFacePhotoContainer')[0].style.display = 'none';
-                document.getElementsByClassName('search-btn')[0].style.display = 'none';
-                document.getElementsByClassName('cancel-btn')[0].style.display = 'none';
+            getElementByClassName('cancel-btn').addEventListener('click', () => {
+                showElement(getElementByClassName('findFaceUploadPhoto'));
+                hideElement(getElementByClassName('findFacePhotoContainer'));
+                hideElement(getElementByClassName('search-btn'));
+                hideElement(getElementByClassName('cancel-btn'));
             });
 
-            document.getElementsByClassName('search-btn')[0].addEventListener('click', () => {
+            getElementByClassName('search-btn').addEventListener('click', () => {
                 startSearch();
             });
 
