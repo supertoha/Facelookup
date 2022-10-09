@@ -5,7 +5,17 @@ VisualStudioVersion = 16.0.32510.428
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FaceLookup", "FaceLookup\FaceLookup.csproj", "{5A2DB058-8C57-4E76-A16A-D084F60ABAE5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FaceLookup.Models", "FaceLookup.Models\FaceLookup.Models.csproj", "{6D5C0490-4AEC-4CE3-8E63-515DD00FD380}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FaceLookup.Models", "FaceLookup.Models\FaceLookup.Models.csproj", "{6D5C0490-4AEC-4CE3-8E63-515DD00FD380}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FaceLookup.Service", "FaceLookup.Service\FaceLookup.Service.csproj", "{8AC7F647-8DF7-4FC4-80C3-CB602095C31D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FaceLookup.Service.Interfaces", "FaceLookup.Service.Interfaces\FaceLookup.Service.Interfaces.csproj", "{B77AD129-CBD7-464B-8D19-58F1DA1B31F1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FaceLookup.MsSqlDataProvider", "FaceLookup.MsSqlDataProvider\FaceLookup.MsSqlDataProvider.csproj", "{F952B1A2-891D-4E6A-A3F7-17B7743B3FF1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FaceLookup.Common", "FaceLookup.Common\FaceLookup.Common.csproj", "{21804771-F823-4AE1-B12B-CFD744CFFEF8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FaceLookup.Test", "FaceLookup.Test\FaceLookup.Test.csproj", "{ECDEEBFC-D2B2-4668-AE10-DC22F6F10F72}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +31,26 @@ Global
 		{6D5C0490-4AEC-4CE3-8E63-515DD00FD380}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6D5C0490-4AEC-4CE3-8E63-515DD00FD380}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6D5C0490-4AEC-4CE3-8E63-515DD00FD380}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8AC7F647-8DF7-4FC4-80C3-CB602095C31D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8AC7F647-8DF7-4FC4-80C3-CB602095C31D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8AC7F647-8DF7-4FC4-80C3-CB602095C31D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8AC7F647-8DF7-4FC4-80C3-CB602095C31D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B77AD129-CBD7-464B-8D19-58F1DA1B31F1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B77AD129-CBD7-464B-8D19-58F1DA1B31F1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B77AD129-CBD7-464B-8D19-58F1DA1B31F1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B77AD129-CBD7-464B-8D19-58F1DA1B31F1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F952B1A2-891D-4E6A-A3F7-17B7743B3FF1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F952B1A2-891D-4E6A-A3F7-17B7743B3FF1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F952B1A2-891D-4E6A-A3F7-17B7743B3FF1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F952B1A2-891D-4E6A-A3F7-17B7743B3FF1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{21804771-F823-4AE1-B12B-CFD744CFFEF8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{21804771-F823-4AE1-B12B-CFD744CFFEF8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{21804771-F823-4AE1-B12B-CFD744CFFEF8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{21804771-F823-4AE1-B12B-CFD744CFFEF8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ECDEEBFC-D2B2-4668-AE10-DC22F6F10F72}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ECDEEBFC-D2B2-4668-AE10-DC22F6F10F72}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ECDEEBFC-D2B2-4668-AE10-DC22F6F10F72}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ECDEEBFC-D2B2-4668-AE10-DC22F6F10F72}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

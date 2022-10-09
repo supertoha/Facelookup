@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="HNSW" Version="1.0.21628" />
+    <PackageReference Include="Keras.NET" Version="3.7.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FaceLookup.Common\FaceLookup.Common.csproj" />
+    <ProjectReference Include="..\FaceLookup.Service.Interfaces\FaceLookup.Service.Interfaces.csproj" />
+  </ItemGroup>
+
+</Project>
