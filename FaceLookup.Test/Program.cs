@@ -1,29 +1,23 @@
-﻿using FaceLookup.Service;
+﻿using FaceLookup.MsSqlDataProvider;
+using FaceLookup.Service;
 using FaceLookup.Service.Interfaces;
 using System;
+using System.Drawing;
 
 namespace FaceLookup.Test
 {
-    //public class FaceInfo : IFaceInfo
-    //{
-    //    public string FaceSource { get; set; }
-    //}
-
-    public class FaceIndexItem : /*FaceInfo,*/ IFaceIndexsItem
-    {
-        public float[] FaceVector { get; set; }
-        public int? FaceIndexId { get; set; }
-        public string FaceSource { get; set; }
-    }
 
     class Program
     {
         static void Main(string[] args)
         {
+            var sqlDataProvider = new SqlDataProvider("Server=localhost;Database=facelookup;Trusted_Connection=True;");
+            sqlDataProvider.EnsureCreated();
 
-            var index = new FacesIndex<FaceIndexItem>(@"c:\Users\User\image_index_model\", null);
+            var index = new FacesIndex<Person>(@"c:\Users\User\image_index_model\", sqlDataProvider);
             index.Init();
-            index.AddBulkFaces(new [] { new FaceIndexItem { FaceSource = @"d:\\datasets\\age_gender\\10_1_0_20170109204502951.jpg" } });
+            //index.AddBulkFaces(new [] { new Person { FaceSource = @"d:\\datasets\\age_gender\\10_1_0_20170109204502951.jpg", Name="Ivan" } });
+            index.FindFaces(Image.FromFile(@"d:\\datasets\\age_gender\\10_1_0_20170109204502951.jpg") as Bitmap);
         }
     }
 }

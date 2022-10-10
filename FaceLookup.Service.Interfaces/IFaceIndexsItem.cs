@@ -4,7 +4,7 @@ using System.Text;
 
 namespace FaceLookup.Service.Interfaces
 {
-    public interface IFaceIndexsItem //: IFaceInfo
+    public interface IFaceIndexsItem 
     {
         public string FaceSource { get; set; }
 

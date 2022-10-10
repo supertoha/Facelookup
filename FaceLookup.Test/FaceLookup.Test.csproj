@@ -6,6 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\FaceLookup.MsSqlDataProvider\FaceLookup.MsSqlDataProvider.csproj" />
     <ProjectReference Include="..\FaceLookup.Service\FaceLookup.Service.csproj" />
   </ItemGroup>
 
