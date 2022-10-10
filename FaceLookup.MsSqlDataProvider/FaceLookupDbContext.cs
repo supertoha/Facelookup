@@ -13,9 +13,7 @@ namespace FaceLookup.MsSqlDataProvider
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-
             modelBuilder.Entity<Person>().Property(x => x.FaceVector).HasConversion(x => JsonConvert.SerializeObject(x), y => JsonConvert.DeserializeObject<float[]>(y));
-
         }
 
         private readonly string _connectionString;

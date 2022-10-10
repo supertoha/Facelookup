@@ -4,6 +4,7 @@ using HNSW.Net;
 using Keras.Models;
 using Keras.PreProcessing.Image;
 using Numpy;
+using OpenCvSharp;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -25,6 +26,7 @@ namespace FaceLookup.Service
 
         #region private data
 
+        private CascadeClassifier _cascadeClassifier;
         private readonly IFacesIndexDataProvider _dataProvider;
         private readonly string _face2VectorModelPath;
         private readonly Func<float[], float[], float> _distanceFunction;
@@ -40,12 +42,12 @@ namespace FaceLookup.Service
             if (_isInited)
                 return false;
 
+
             var parameters = new SmallWorld<float[], float>.Parameters()
             {
                 //M = 15,
                 //LevelLambda = 1 / Math.Log(15),             
-            };
-            
+            };            
             _indexGraph = new SmallWorld<float[], float>(_distanceFunction, DefaultRandomGenerator.Instance, parameters);
             var lastIndexInfo = _dataProvider.GetLastFacesIndex();
             if (lastIndexInfo.indexInfo != null && lastIndexInfo.latentVectors != null)
@@ -57,14 +59,19 @@ namespace FaceLookup.Service
             }
 
             _face2VectorModel = Sequential.LoadModel(_face2VectorModelPath);
+
+            _cascadeClassifier = new CascadeClassifier("haarcascade_frontalface_default.xml");
+
             _isInited = true;
             return true;
         }
 
-        public void AddBulkFaces(IEnumerable<T> faces)
+        public ActionStatusEnum[] AddBulkFaces(IEnumerable<T> faces)
         {
             if (_isInited == false)
                 throw new Exception("Init method will be called before");
+
+            var report = new List<ActionStatusEnum>();
 
             var butchSize = 100;
             var batches = CollectionHelper.Split(faces, butchSize);
@@ -73,8 +80,34 @@ namespace FaceLookup.Service
             var itemsCollection = new List<IFaceIndexsItem>();
             foreach (var batch in batches)
             {
-                var batchImages = batch.Select(info => ReadImage(info.FaceSource)).ToArray();
-                var imagesArray = np.array(batchImages);
+                var images = batch.Select(info => Image.FromFile(info.FaceSource));
+
+                var imageStatus = ActionStatusEnum.Success;
+                var batchFaces = new List<Bitmap>();
+                foreach (Bitmap image in images)
+                {
+                    var rects = DetectFaces(image);
+
+                    if (rects.Length == 0)                    
+                        imageStatus = ActionStatusEnum.FaceNotFound;                    
+
+                    if (rects.Length > 1)                    
+                        imageStatus = ActionStatusEnum.MoreThenOneFaceFound;
+
+                    report.Add(imageStatus);
+
+                    if (imageStatus != ActionStatusEnum.Success)
+                        continue;
+
+                    var corppedFace = image.Clone(new Rectangle(rects[0].Left, rects[0].Top, rects[0].Width, rects[0].Height), PixelFormat.Format24bppRgb);
+
+                    batchFaces.Add(corppedFace);
+                }
+
+                if (!batchFaces.Any())
+                    continue;
+
+                var imagesArray = np.array(batchFaces.Select(x=>ReadImage(x)).ToArray());
                 var imageLatentVector = _face2VectorModel.Predict(imagesArray);
 
                 for (int i = 0; i < batch.Count; i++)
@@ -89,24 +122,29 @@ namespace FaceLookup.Service
                 }
             }
 
-            // add to index
-            var ids = _indexGraph.AddItems(collection);
-            for (int i = 0; i < itemsCollection.Count; i++)
+            if (itemsCollection.Any())
             {
-                var item = itemsCollection[i];
-                var id = ids[i];
-                item.FaceIndexId = id;
+                // add to index
+                var ids = _indexGraph.AddItems(collection);
+                for (int i = 0; i < itemsCollection.Count; i++)
+                {
+                    var item = itemsCollection[i];
+                    var id = ids[i];
+                    item.FaceIndexId = id;
+                }
+
+                // update db
+                using (var ms = new MemoryStream())
+                {
+                    _indexGraph.SerializeGraph(ms);
+                    ms.Flush();
+                    _indexVersion = _dataProvider.AddFaces(itemsCollection, ms.ToArray());
+                }
             }
 
-            // update db
-            using (var ms = new MemoryStream())
-            {
-                _indexGraph.SerializeGraph(ms);
-                ms.Flush();
-                _indexVersion = _dataProvider.AddFaces(itemsCollection, ms.ToArray());
-            }
-                
+            return report.ToArray();
         }
+        
 
         public FindFaceInfo[] FindFaces(Bitmap faceImage, int limit=1)
         {
@@ -127,6 +165,33 @@ namespace FaceLookup.Service
 
         #region private methods
 
+        //private Image DetectAndCropFace(Bitmap image)
+        //{
+        //    var rects = DetectFaces(image);
+
+        //    if (rects.Length == 0)
+        //        throw new Exception("There is no face detected");
+
+        //    if(rects.Length > 1)
+        //        throw new Exception("More the one face face detected");
+
+        //    var corppedFace = image.Clone(new Rectangle(rects[0].Left, rects[0].Top, rects[0].Width, rects[0].Height), PixelFormat.Format24bppRgb);
+
+        //    return corppedFace;
+        //}
+
+        private Rect[] DetectFaces(Image image)
+        {
+            using(var ms = new MemoryStream())
+            {
+                image.Save(ms, ImageFormat.Jpeg);
+                ms.Flush();
+                ms.Position = 0;
+                var img = Mat.FromStream(ms, ImreadModes.Color);
+                return _cascadeClassifier.DetectMultiScale(img);
+            }
+        }
+
         private NDarray ReadImage(byte[] data)
         {
             //System.Drawing.Image.FromFile(inputPath)
@@ -142,7 +207,7 @@ namespace FaceLookup.Service
         {
             var resizedImage = ImageHelper.ResizeImage(image, 64, 64);
 
-            var imageData = resizedImage.LockBits(new Rectangle(new Point(), resizedImage.Size), ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+            var imageData = resizedImage.LockBits(new Rectangle(new System.Drawing.Point(), resizedImage.Size), ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
             var byteArray = new byte[resizedImage.Width * resizedImage.Height * 3];
             Marshal.Copy(imageData.Scan0, byteArray, 0, byteArray.Length);
             var npArray = np.array(byteArray.Select(x => Convert.ToSingle(x)).ToArray());

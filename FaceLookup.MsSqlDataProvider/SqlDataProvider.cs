@@ -62,7 +62,7 @@ namespace FaceLookup.MsSqlDataProvider
         {
             using (var db = new FaceLookupDbContext(_connectionString))
             {
-                var indexInfo = db.IndexVersions.OrderBy(x => x.Version).FirstOrDefault();
+                var indexInfo = db.IndexVersions.OrderByDescending(x => x.Version).FirstOrDefault();
                 var latentVectors = db.Presons.OrderBy(x => x.FaceIndexId).Select(x => x.FaceVector).ToList();
 
                 return (indexInfo, latentVectors);

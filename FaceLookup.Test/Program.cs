@@ -16,8 +16,10 @@ namespace FaceLookup.Test
 
             var index = new FacesIndex<Person>(@"c:\Users\User\image_index_model\", sqlDataProvider);
             index.Init();
-            //index.AddBulkFaces(new [] { new Person { FaceSource = @"d:\\datasets\\age_gender\\10_1_0_20170109204502951.jpg", Name="Ivan" } });
-            index.FindFaces(Image.FromFile(@"d:\\datasets\\age_gender\\10_1_0_20170109204502951.jpg") as Bitmap);
+            index.AddBulkFaces(new[] { new Person { FaceSource = @"d:\\datasets\\age_gender\\1_0_0_20161219205817093.jpg", Name = "Petr" } });
+            //index.AddBulkFaces(new [] { new Person { FaceSource = @"d:\\datasets\\age_gender\\1_0_0_20161219202455708.jpg", Name="Oleg" } });
+
+            index.FindFaces(Image.FromFile(@"d:\\datasets\\age_gender\\1_0_0_20161219202455708.jpg") as Bitmap);
         }
     }
 }
