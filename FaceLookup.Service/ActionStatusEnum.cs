@@ -4,6 +4,7 @@
     {
         FaceNotFound=2,
         MoreThenOneFaceFound=3,
-        Success = 4
+        Success = 4,
+        InitError = 5
     }
 }

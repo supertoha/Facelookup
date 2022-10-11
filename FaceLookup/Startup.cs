@@ -1,5 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.Globalization;
+using FaceLookup.MsSqlDataProvider;
+using FaceLookup.Service;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -23,7 +26,24 @@ namespace FaceLookup
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddSwaggerGen();
-            services.AddControllersWithViews();            
+            services.AddControllersWithViews();
+
+            var connectionString = this.Configuration.GetSection("ConnectionStrings")["default"];
+            var face2VectorModelPath = this.Configuration.GetSection("face2VectorModelPath").Value;
+
+            services.AddSingleton(GetFaceLookupProvider(connectionString, face2VectorModelPath));
+        }
+
+        private FacesIndex<Person> GetFaceLookupProvider(string connectionString, string face2VectorModelPath)
+        {
+            var sqlDataProvider = new SqlDataProvider(connectionString);
+            sqlDataProvider.EnsureCreated();
+
+            var index = new FacesIndex<Person>(face2VectorModelPath, sqlDataProvider);
+            if (index.Init() == false)
+                throw new Exception("FacesIndex init error");
+
+            return index;
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

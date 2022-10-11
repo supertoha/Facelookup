@@ -42,7 +42,6 @@ namespace FaceLookup.Service
             if (_isInited)
                 return false;
 
-
             var parameters = new SmallWorld<float[], float>.Parameters()
             {
                 //M = 15,
@@ -60,7 +59,9 @@ namespace FaceLookup.Service
 
             _face2VectorModel = Sequential.LoadModel(_face2VectorModelPath);
 
-            _cascadeClassifier = new CascadeClassifier("haarcascade_frontalface_default.xml");
+            var baseDirectoryPath = Path.GetDirectoryName(this.GetType().Assembly.Location);
+
+            _cascadeClassifier = new CascadeClassifier(Path.Combine(baseDirectoryPath, "haarcascade_frontalface_default.xml"));
 
             _isInited = true;
             return true;
@@ -146,10 +147,24 @@ namespace FaceLookup.Service
         }
         
 
-        public FindFaceInfo[] FindFaces(Bitmap faceImage, int limit=1)
+        public FindFaceReport FindFaces(Bitmap faceImage, int limit=1)
         {
-            var imageNdArray = ReadImage(faceImage);
-            var imageLatentVector = _face2VectorModel.Predict(np.array(new NDarray[] { imageNdArray }));
+            if(_isInited == false)
+                return new FindFaceReport { Status = ActionStatusEnum.InitError };
+
+            var faceRects = DetectFaces(faceImage);
+
+            if (faceRects.Length == 0)
+                return new FindFaceReport { Status = ActionStatusEnum.FaceNotFound };
+
+            if(faceRects.Length > 1)
+                return new FindFaceReport { Status = ActionStatusEnum.MoreThenOneFaceFound };
+
+            var corppedFace = faceImage.Clone(new Rectangle(faceRects[0].Left, faceRects[0].Top, faceRects[0].Width, faceRects[0].Height), faceImage.PixelFormat);
+
+            var imageNdArray = ReadImage(corppedFace);
+            var imageArrays = np.array(new NDarray[] { imageNdArray });
+            var imageLatentVector = _face2VectorModel.Predict(imageArrays);
             var searchResults = _indexGraph.KNNSearch(imageLatentVector[0].GetData<float>(), limit);
 
             var resultList = new List<FindFaceInfo>();
@@ -160,25 +175,12 @@ namespace FaceLookup.Service
                 if (item != null)
                     resultList.Add(new FindFaceInfo { Distance = result.Distance, Face = item });
             }
-            return resultList.OrderBy(x => x.Distance).ToArray();
+
+            return new FindFaceReport { Faces = resultList.OrderBy(x => x.Distance).ToArray(), Status = ActionStatusEnum.Success };
         }
 
         #region private methods
 
-        //private Image DetectAndCropFace(Bitmap image)
-        //{
-        //    var rects = DetectFaces(image);
-
-        //    if (rects.Length == 0)
-        //        throw new Exception("There is no face detected");
-
-        //    if(rects.Length > 1)
-        //        throw new Exception("More the one face face detected");
-
-        //    var corppedFace = image.Clone(new Rectangle(rects[0].Left, rects[0].Top, rects[0].Width, rects[0].Height), PixelFormat.Format24bppRgb);
-
-        //    return corppedFace;
-        //}
 
         private Rect[] DetectFaces(Image image)
         {

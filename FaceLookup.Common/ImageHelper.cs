@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
+using System.IO;
 using System.Text;
 
 namespace FaceLookup.Common
@@ -39,6 +40,28 @@ namespace FaceLookup.Common
             }
 
             return destImage;
+        }
+
+        public static Bitmap BitmapFromArray(byte[] data)
+        {
+            using (var ms = new MemoryStream(data, false))
+            {
+                ms.Position = 0;
+                return new Bitmap(ms);
+            }
+        }
+
+        public static Bitmap Cpop(Bitmap source, Rectangle cropRect)
+        {
+            Bitmap target = new Bitmap(cropRect.Width, cropRect.Height);
+
+            using (Graphics g = Graphics.FromImage(target))
+            {
+                g.DrawImage(source, new Rectangle(0, 0, target.Width, target.Height),
+                                 cropRect,
+                                 GraphicsUnit.Pixel);
+            }
+            return target;
         }
     }
 }

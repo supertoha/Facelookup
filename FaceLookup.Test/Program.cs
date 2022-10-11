@@ -3,6 +3,7 @@ using FaceLookup.Service;
 using FaceLookup.Service.Interfaces;
 using System;
 using System.Drawing;
+using System.Threading.Tasks;
 
 namespace FaceLookup.Test
 {
@@ -16,10 +17,14 @@ namespace FaceLookup.Test
 
             var index = new FacesIndex<Person>(@"c:\Users\User\image_index_model\", sqlDataProvider);
             index.Init();
-            index.AddBulkFaces(new[] { new Person { FaceSource = @"d:\\datasets\\age_gender\\1_0_0_20161219205817093.jpg", Name = "Petr" } });
+            //index.AddBulkFaces(new[] { new Person { FaceSource = @"d:\\datasets\\age_gender\\1_0_0_20161219205817093.jpg", Name = "Petr" } });
             //index.AddBulkFaces(new [] { new Person { FaceSource = @"d:\\datasets\\age_gender\\1_0_0_20161219202455708.jpg", Name="Oleg" } });
+ 
+            var faces = index.FindFaces(Image.FromFile(@"d:\\datasets\\age_gender\\1_0_0_20161219205817093.jpg") as Bitmap);
+            Console.WriteLine(faces);
 
-            index.FindFaces(Image.FromFile(@"d:\\datasets\\age_gender\\1_0_0_20161219202455708.jpg") as Bitmap);
+
+            Console.ReadLine();
         }
     }
 }
