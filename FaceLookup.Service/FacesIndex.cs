@@ -1,9 +1,8 @@
 ﻿using FaceLookup.Common;
 using FaceLookup.Service.Interfaces;
 using HNSW.Net;
-using Keras.Models;
-using Keras.PreProcessing.Image;
-using Numpy;
+using Microsoft.ML.OnnxRuntime;
+using Microsoft.ML.OnnxRuntime.Tensors;
 using OpenCvSharp;
 using System;
 using System.Collections.Generic;
@@ -12,6 +11,7 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using Image = System.Drawing.Image;
 
 namespace FaceLookup.Service
 {
@@ -30,7 +30,9 @@ namespace FaceLookup.Service
         private readonly IFacesIndexDataProvider _dataProvider;
         private readonly string _face2VectorModelPath;
         private readonly Func<float[], float[], float> _distanceFunction;
-        private BaseModel _face2VectorModel;
+        
+        private InferenceSession _face2VectorOnnxModel;
+
         private SmallWorld<float[], float> _indexGraph;
         private int _indexVersion;
         private bool _isInited;
@@ -57,7 +59,7 @@ namespace FaceLookup.Service
                 _indexVersion = lastIndexInfo.indexInfo.Version;
             }
 
-            _face2VectorModel = Sequential.LoadModel(_face2VectorModelPath);
+            _face2VectorOnnxModel = new InferenceSession(_face2VectorModelPath);
 
             var baseDirectoryPath = Path.GetDirectoryName(this.GetType().Assembly.Location);
 
@@ -108,12 +110,18 @@ namespace FaceLookup.Service
                 if (!batchFaces.Any())
                     continue;
 
-                var imagesArray = np.array(batchFaces.Select(x=>ReadImage(x)).ToArray());
-                var imageLatentVector = _face2VectorModel.Predict(imagesArray);
+                var xs = new[] { NamedOnnxValue.CreateFromTensor<float>("input_1", ReadImages(batchFaces)) };
+
+                List<List<float>> imageLatentVector;
+                using (var results = _face2VectorOnnxModel.Run(xs))
+                {
+                    var denseResultTensor = results.First().Value as DenseTensor<float>;
+                    imageLatentVector = CollectionHelper.Split(denseResultTensor.ToList<float>(), denseResultTensor.Strides[0]);
+                }
 
                 for (int i = 0; i < batch.Count; i++)
                 {
-                    var latentVector = imageLatentVector[i].GetData<float>();
+                    var latentVector = imageLatentVector[i].ToArray();
                     var item = batch[i];
                     item.FaceVector = latentVector;
 
@@ -162,10 +170,16 @@ namespace FaceLookup.Service
 
             var corppedFace = faceImage.Clone(new Rectangle(faceRects[0].Left, faceRects[0].Top, faceRects[0].Width, faceRects[0].Height), faceImage.PixelFormat);
 
-            var imageNdArray = ReadImage(corppedFace);
-            var imageArrays = np.array(new NDarray[] { imageNdArray });
-            var imageLatentVector = _face2VectorModel.Predict(imageArrays);
-            var searchResults = _indexGraph.KNNSearch(imageLatentVector[0].GetData<float>(), limit);
+            var imageTensor = ReadImages(new Bitmap[] { corppedFace });
+            var xs = new[] { NamedOnnxValue.CreateFromTensor<float>("input_1", imageTensor) };
+            float[] imageLatentVector;
+            using (var results = _face2VectorOnnxModel.Run(xs))
+            {
+                var denseResultTensor = results.First().Value as DenseTensor<float>;
+                imageLatentVector = denseResultTensor.ToArray<float>();
+            }
+
+            var searchResults = _indexGraph.KNNSearch(imageLatentVector, limit);
 
             var resultList = new List<FindFaceInfo>();
             foreach (var result in searchResults)
@@ -194,35 +208,25 @@ namespace FaceLookup.Service
             }
         }
 
-        private NDarray ReadImage(byte[] data)
+
+        private DenseTensor<float> ReadImages(ICollection<Bitmap> images)
         {
-            //System.Drawing.Image.FromFile(inputPath)
-            using (var ms = new MemoryStream(data, false))
+            int[] dims = new int[] { images.Count, 64, 64, 3 };
+
+            var byteArray = new byte[64 * 64 * 3 * images.Count];
+            for (int i = 0; i < images.Count; i++)
             {
-                var image = new Bitmap(ms);
-                return ReadImage(image);
+                var image = images.ElementAt(i);
+                var resizedImage = ImageHelper.ResizeImage(image, 64, 64);
+                var imageData = resizedImage.LockBits(new Rectangle(new System.Drawing.Point(), resizedImage.Size), ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
+                var bytesPerImage = 64 * 64 * 3;
+                Marshal.Copy(imageData.Scan0, byteArray, i* bytesPerImage, bytesPerImage);
             }
-            return null;
-        }
 
-        private NDarray ReadImage(Bitmap image)
-        {
-            var resizedImage = ImageHelper.ResizeImage(image, 64, 64);
+            var sample = byteArray.Select(x => Convert.ToSingle(x)/255F).ToArray();
 
-            var imageData = resizedImage.LockBits(new Rectangle(new System.Drawing.Point(), resizedImage.Size), ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
-            var byteArray = new byte[resizedImage.Width * resizedImage.Height * 3];
-            Marshal.Copy(imageData.Scan0, byteArray, 0, byteArray.Length);
-            var npArray = np.array(byteArray.Select(x => Convert.ToSingle(x)).ToArray());
-            var result = npArray.reshape(resizedImage.Width, resizedImage.Height, 3)/255F;
-
-            return result;
-        }
-
-        private NDarray ReadImage(string imagePath)
-        {
-            var image = ImageUtil.LoadImg(imagePath, color_mode: "rgb", target_size: new Keras.Shape(64, 64));
-            var imageArray = (ImageUtil.ImageToArray(image) as NDarray) / 255F;
-            return imageArray.reshape(64, 64, 3);
+            var tensor = new DenseTensor<float>(sample, dims); 
+            return tensor;
         }
 
         #endregion

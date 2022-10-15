@@ -7,7 +7,8 @@
 
   <ItemGroup>
     <PackageReference Include="HNSW" Version="1.0.21628" />
-    <PackageReference Include="Keras.NET" Version="3.7.5" />
+    <PackageReference Include="Microsoft.ML" Version="1.7.1" />
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.12.1" />
     <PackageReference Include="OpenCvSharp4" Version="4.6.0.20220608" />
     <PackageReference Include="OpenCvSharp4.runtime.win" Version="4.6.0.20220608" />
     <PackageReference Include="System.Drawing.Common" Version="6.0.0" />
@@ -20,9 +21,6 @@
 
   <ItemGroup>
     <None Update="haarcascade_frontalface_default.xml">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="python37.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
