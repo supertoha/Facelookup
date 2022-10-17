@@ -1,7 +1,5 @@
 ﻿using FaceLookup.Service.Interfaces;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace FaceLookup.MsSqlDataProvider
 {
@@ -11,5 +9,7 @@ namespace FaceLookup.MsSqlDataProvider
         public DateTime Date { get; set; }
         public byte[] Data { get; set; }
         public int Version { get; set; }
+
+        public int Size { get; set; }
     }
 }

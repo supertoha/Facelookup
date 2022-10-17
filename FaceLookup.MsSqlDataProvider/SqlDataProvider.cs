@@ -24,7 +24,7 @@ namespace FaceLookup.MsSqlDataProvider
             }
         }
 
-        public int AddFaces(ICollection<IFaceIndexsItem> faces, byte[] indexBlob)
+        public int AddFaces(ICollection<IFaceIndexsItem> faces, byte[] indexBlob, int personsNumber)
         {
             using (var db = new FaceLookupDbContext(_connectionString))
             {                
@@ -33,7 +33,7 @@ namespace FaceLookup.MsSqlDataProvider
 
                 var persons = faces.Cast<Person>();
 
-                var version = new IndexVersion { Version = maxVersion, Date = DateTime.UtcNow, Data = indexBlob };
+                var version = new IndexVersion { Version = maxVersion, Date = DateTime.UtcNow, Data = indexBlob, Size = personsNumber };
 
                 foreach (var person in persons)
                     person.Version = version;

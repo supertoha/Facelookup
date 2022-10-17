@@ -2,7 +2,7 @@
 {
     public enum ActionStatusEnum
     {
-        FaceNotFound=2,
+        FaceNotFound = 2,
         MoreThenOneFaceFound=3,
         Success = 4,
         InitError = 5

@@ -285,13 +285,14 @@
                 }
             };
 
-            const responce = await fetch('/api/facelookup/find', {
+            const response = await fetch('/api/facelookup/find', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 mode: 'cors',
                 cache: 'no-cache',
                 body: JSON.stringify(requestData)
             });
+            console.log(await response.json());
         }
 
         function dragOverHandler(ev) {

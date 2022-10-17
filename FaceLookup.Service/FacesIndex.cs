@@ -69,7 +69,7 @@ namespace FaceLookup.Service
             return true;
         }
 
-        public ActionStatusEnum[] AddBulkFaces(IEnumerable<T> faces)
+        public ActionStatusEnum[] AddBulkFaces(IEnumerable<T> faces, Action<double> progress=null)
         {
             if (_isInited == false)
                 throw new Exception("Init method will be called before");
@@ -81,36 +81,40 @@ namespace FaceLookup.Service
 
             var collection = new List<float[]>();
             var itemsCollection = new List<IFaceIndexsItem>();
-            foreach (var batch in batches)
+            for(int b=0;b < batches.Count;b++)
             {
-                var images = batch.Select(info => Image.FromFile(info.FaceSource));
+                var batch = batches[b];
+                var personsWithImage = batch.Select(info => (ReadImage(info.FaceSource), info));
 
                 var imageStatus = ActionStatusEnum.Success;
-                var batchFaces = new List<Bitmap>();
-                foreach (Bitmap image in images)
+                var batchFaces = new List<(Bitmap, IFaceIndexsItem)>();
+                foreach (var personWithImage in personsWithImage)
                 {
-                    var rects = DetectFaces(image);
+                    var rects = DetectFaces(personWithImage.Item1);
 
                     if (rects.Length == 0)                    
                         imageStatus = ActionStatusEnum.FaceNotFound;                    
 
-                    if (rects.Length > 1)                    
-                        imageStatus = ActionStatusEnum.MoreThenOneFaceFound;
+                    //if (rects.Length > 1)                    
+                    //    imageStatus = ActionStatusEnum.MoreThenOneFaceFound;
 
                     report.Add(imageStatus);
 
                     if (imageStatus != ActionStatusEnum.Success)
                         continue;
 
-                    var corppedFace = image.Clone(new Rectangle(rects[0].Left, rects[0].Top, rects[0].Width, rects[0].Height), PixelFormat.Format24bppRgb);
+                    if (personWithImage.Item1 == null)
+                        continue;
 
-                    batchFaces.Add(corppedFace);
+                    var corppedFace = personWithImage.Item1.Clone(new Rectangle(rects[0].Left, rects[0].Top, rects[0].Width, rects[0].Height), PixelFormat.Format24bppRgb);
+
+                    batchFaces.Add((corppedFace, personWithImage.info));
                 }
 
                 if (!batchFaces.Any())
                     continue;
 
-                var xs = new[] { NamedOnnxValue.CreateFromTensor<float>("input_1", ReadImages(batchFaces)) };
+                var xs = new[] { NamedOnnxValue.CreateFromTensor<float>("input_1", ReadImages(batchFaces.Select(x=>x.Item1).ToArray())) };
 
                 List<List<float>> imageLatentVector;
                 using (var results = _face2VectorOnnxModel.Run(xs))
@@ -119,16 +123,20 @@ namespace FaceLookup.Service
                     imageLatentVector = CollectionHelper.Split(denseResultTensor.ToList<float>(), denseResultTensor.Strides[0]);
                 }
 
-                for (int i = 0; i < batch.Count; i++)
+                for (int i = 0; i < batchFaces.Count; i++)
                 {
                     var latentVector = imageLatentVector[i].ToArray();
                     var item = batch[i];
+                    item.FaceSource = Path.GetFileName(item.FaceSource);
                     item.FaceVector = latentVector;
 
                     itemsCollection.Add(item);
 
                     collection.Add(latentVector);
                 }
+
+                if (progress != null)
+                    progress(b /(double) batches.Count);
             }
 
             if (itemsCollection.Any())
@@ -145,9 +153,9 @@ namespace FaceLookup.Service
                 // update db
                 using (var ms = new MemoryStream())
                 {
-                    _indexGraph.SerializeGraph(ms);
+                    _indexGraph.SerializeGraph(ms);                    
                     ms.Flush();
-                    _indexVersion = _dataProvider.AddFaces(itemsCollection, ms.ToArray());
+                    _indexVersion = _dataProvider.AddFaces(itemsCollection, ms.ToArray(), _indexGraph.Items.Count);
                 }
             }
 
@@ -198,16 +206,31 @@ namespace FaceLookup.Service
 
         private Rect[] DetectFaces(Image image)
         {
-            using(var ms = new MemoryStream())
+            try
+            {            
+                using(var ms = new MemoryStream())
+                {
+                    image.Save(ms, ImageFormat.Jpeg);
+                    ms.Flush();
+                    ms.Position = 0;
+                    var img = Mat.FromStream(ms, ImreadModes.Color);                   
+                    return _cascadeClassifier.DetectMultiScale(img);
+                }
+            }catch
             {
-                image.Save(ms, ImageFormat.Jpeg);
-                ms.Flush();
-                ms.Position = 0;
-                var img = Mat.FromStream(ms, ImreadModes.Color);
-                return _cascadeClassifier.DetectMultiScale(img);
+                return new Rect[0];
             }
         }
 
+        private Bitmap ReadImage(string filePath)
+        {
+            try
+            {
+                return Image.FromFile(filePath) as Bitmap;
+            }
+            catch { }
+            return null;
+        }
 
         private DenseTensor<float> ReadImages(ICollection<Bitmap> images)
         {
