@@ -11,5 +11,7 @@ namespace FaceLookup.Service.Interfaces
         public float[] FaceVector { get; set; }
 
         public int? FaceIndexId { get; set; }
+
+        public string Name { get; set; }
     }
 }

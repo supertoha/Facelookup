@@ -9,5 +9,7 @@ namespace FaceLookup.Models
         public float Distance { get; set; }
 
         public string ImageSource { get; set; }
+
+        public string Name { get; set; }
     }
 }

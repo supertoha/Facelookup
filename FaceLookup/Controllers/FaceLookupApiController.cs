@@ -20,8 +20,7 @@ namespace FaceLookup.Controllers
         public FaceLookupApiController(FacesIndex<Person> facesIndex, IConfiguration configuration)
         {
             _facesIndex = facesIndex;
-            _imagesDirectoryPath = configuration.GetSection("ImagesDirectoryPath").Value;
-            
+            _imagesDirectoryPath = configuration.GetSection("ImagesDirectoryPath").Value;            
         }
 
         private readonly string _imagesDirectoryPath;
@@ -33,13 +32,13 @@ namespace FaceLookup.Controllers
             var image = ImageHelper.BitmapFromArray(request.ImageData);
             var croppedImage = ImageHelper.Cpop(image, new Rectangle(request.ImageBounds.Left, request.ImageBounds.Top, request.ImageBounds.Width, request.ImageBounds.Height));
 
-            var theresould = 0.2F;
+            var theresould = 0.15F;
             var persons = _facesIndex.FindFaces(croppedImage, 5);
 
             if(persons.Status != ActionStatusEnum.Success)
                 return new FaceLookupResponse { Status = (int)persons.Status, StatusDescription = GetResponseStatusDescription(persons.Status) };
 
-            var foundPresons = persons.Faces.Where(x => x.Distance < theresould).ToList();
+            var foundPresons = persons.Faces.Where(x => x.Distance < theresould).OrderByDescending(x=>x.Distance).ToList();
 
             if(foundPresons.Count == 0)
                 return new FaceLookupResponse { Status = 100, StatusDescription = "Person not found" };
@@ -48,6 +47,7 @@ namespace FaceLookup.Controllers
             {
                 Distance = x.Distance,
                 ImageSource = x.Face.FaceSource,
+                Name = x.Face.Name
                 
             }).ToArray() };
         }
@@ -58,7 +58,7 @@ namespace FaceLookup.Controllers
             if (string.IsNullOrEmpty(id))
                 return new ContentResult { Content = "Invalid Id" };
 
-            var regex = new Regex(@"^[0-9A-Za-z_]*\.[a-z]+");
+            var regex = new Regex(@"^[0-9A-Za-z_( )]*\.[a-zA-Z]+");
 
             if (!regex.IsMatch(id))
                 return new ContentResult { Content = "Invalid Id" };
@@ -69,7 +69,6 @@ namespace FaceLookup.Controllers
                 return new ContentResult { Content = "Invalid Id" };
 
             return File(System.IO.File.ReadAllBytes(path), "image/jpg");
-            //return base.File(path, "image/jpg");
         }
 
 

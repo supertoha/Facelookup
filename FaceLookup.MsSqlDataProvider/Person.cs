@@ -1,5 +1,4 @@
 ﻿using FaceLookup.Service.Interfaces;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace FaceLookup.MsSqlDataProvider
 {

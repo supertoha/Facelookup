@@ -2,246 +2,51 @@
     ViewData["Title"] = "Home Page";
 }
 
-<div class="findFaceTopContainer">
-    <div class="findFacePhotoContainer">
-        <canvas id="photoCanvas" width="200" height="200"></canvas>
-    </div>
-    <div class="findFaceResultContainer"></div>
-    <div class="findFaceUploadPhoto" ondrop="dropHandler(event);" ondragover="dragOverHandler(event);" ondragleave="dragLeaveHandler(event)">
-        @*<input type="file" style="display:none" id="upload-input" name="upload">*@
-        <p>Choose a file or drag it here.</p>
-        @* <img id="findFace_upload" alt="Upload Photo" style="cursor: pointer;">*@
-    </div>
-    <input type="file" style="display:none" id="upload-input" name="upload" accept="image/png, image/jpeg">
+<div class="upload" id="upload" ondrop="dropHandler(event);" ondragover="dragOverHandler(event);" ondragleave="dragLeaveHandler(event)">
+    <img src="images/upload.svg" alt="" class="upload__icon">
+    <div class="upload__text">Upload your image here or</div>
+    <button id="upload__btn" class="upload__btn btn">Browse</button>
 </div>
-<div class="findFaceBottomContainer">
-    <button type="button" class="search-btn btn btn-primary btn-lg">Search</button>
-    <button type="button" class="cancel-btn btn btn-secondary btn-lg">Cancel</button>
+<input type="file" style="display:none" id="upload-input" name="upload" accept="image/png, image/jpeg">
+<div id="main__body" class="main__body hide">
+    <div class="left">
+        <div class="hero">
+            <div class="hero__pic">
+                <img id="hero__pic" src="images/test.jpg" alt="">
+            </div>
+        </div>
+        <div class="controls">
+            <div class="controls__inner">
+                <button id="search__btn" class="btn">Search</button>
+                <button id="cancel__btn" class="btn btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+    <div id="right" class="right hide">
+        <div class="results">
+            <div id="result_text" class="results__text"></div>
+            <div id="results__body" class="results__body">
+
+            </div>
+        </div>
+    </div>
 </div>
 
 @section Scripts
 {
     <script>
-        var topPos;
-        var leftPos;
-        var rightPos;
-        var bottomPos;
-        var offsetX;
-        var offsetY
-        var ctx;
-        var canvas;
-        var hoverState = 'none'
-        var startX;
-        var startY;
-        var moveState = 'none';
-        var canvasWidth;
-        var canvasHeight;
         var image;
 
-        var defaultThumbWifth = 30;
-        var defaultThumbHeight = 4;
-        var defaultThumbColor = '#555';
-        var hoverThumbColor = '#000';
-        var minSelectionSize = 50;
-        var canvaseMargin = 2;
-
-        function getElementByClassName(name)
-        {
-            var elements = document.getElementsByClassName(name);
-            if (elements === 0)
-                return null;
-
-            return elements[0];
-        }
-
-        function hideElement(element)
-        {
-            element.style.display = 'none';
-        }
-
-        function showElement(element)
-        {
-            element.style.display = 'block';
-        }
-
-
-        function myDown(e) {
-            e.preventDefault();
-            e.stopPropagation();
-
-            // get the current mouse position
-            var mx = parseInt(e.clientX - offsetX);
-            var my = parseInt(e.clientY - offsetY);
-
-            var leftThumb = getLeftThumbRect();
-            var topThumb = getTopThumbRect();
-            var rightThumb = getRightThumbRect();
-            var bottomThumb = getBottomThumbRect();
-
-            if (isPointIntersectRect(mx, my, leftThumb)) {
-                moveState = 'left';
-            } else if (isPointIntersectRect(mx, my, topThumb)) {
-                moveState = 'top';
-            } else if (isPointIntersectRect(mx, my, rightThumb)) {
-                moveState = 'right';
-            } else if (isPointIntersectRect(mx, my, bottomThumb)) {
-                moveState = 'bottom';
-            } else {
-                moveState = 'none';
-            }
-
-            startX = mx;
-            startY = my;
-        }
-
-        function myUp(e) {
-            moveState = 'none';
-        }
-
-        function myMouseLeave() {
-            moveState = 'none';
-        }
-
-        function myMove(e) {
-            e.preventDefault();
-            e.stopPropagation();
-
-            var width = Math.max(rightPos - leftPos, 0);
-            var height = Math.max(bottomPos - topPos, 0);
-
-            // get the current mouse position
-            var mx = parseInt(e.clientX - offsetX);
-            var my = parseInt(e.clientY - offsetY);
-
-            var leftThumb = getLeftThumbRect();
-            var topThumb = getTopThumbRect();
-            var rightThumb = getRightThumbRect();
-            var bottomThumb = getBottomThumbRect();
-
-            // update hover status
-            if (isPointIntersectRect(mx, my, leftThumb)) {
-                canvas.style.cursor = 'w-resize';
-                hoverState = 'left';
-            } else if (isPointIntersectRect(mx, my, topThumb)) {
-                canvas.style.cursor = 'n-resize';
-                hoverState = 'top';
-            } else if (isPointIntersectRect(mx, my, rightThumb)) {
-                canvas.style.cursor = 'w-resize';
-                hoverState = 'right';
-            } else if (isPointIntersectRect(mx, my, bottomThumb)) {
-                canvas.style.cursor = 'n-resize';
-                hoverState = 'bottom';
-            } else {
-                canvas.style.cursor = 'default';
-                hoverState = 'none';
-            }
-
-            var dx = mx - startX;
-            var dy = my - startY;
-
-            if (moveState == 'top' && (dy < 0 || (height > minSelectionSize))) {
-                topPos += dy;
-            } else if (moveState == 'bottom' && (dy > 0 || height > minSelectionSize)) {
-                bottomPos += dy;
-            } else if (moveState == 'right' && (dx > 0 || width > minSelectionSize)) {
-                rightPos += dx;
-            } else if (moveState == 'left' && (dx < 0 || width > minSelectionSize)) {
-                leftPos += dx;
-            }
-
-
-            topPos = Math.max(topPos, canvaseMargin);
-            bottomPos = Math.min(bottomPos, canvasHeight - canvaseMargin);
-            rightPos = Math.min(rightPos, canvasWidth - canvaseMargin);
-            leftPos = Math.max(leftPos, canvaseMargin);
-
-            redrawSelection();
-            startY = my;
-            startX = mx;
-        }
-
-        function isPointIntersectRect(xPoint, yPoint, rect) {
-            return xPoint > rect.x && xPoint < rect.x + rect.width && yPoint > rect.y && yPoint < rect.y + rect.height;
-        }
-
-        function getLeftThumbRect() {
-            var width = Math.max(rightPos - leftPos, minSelectionSize);
-            var height = Math.max(bottomPos - topPos, minSelectionSize);
-            return { x: leftPos - defaultThumbHeight / 2, y: topPos + height / 2 - defaultThumbWifth / 2, width: defaultThumbHeight, height: defaultThumbWifth };
-        }
-
-        function getRightThumbRect() {
-            var width = Math.max(rightPos - leftPos, minSelectionSize);
-            var height = Math.max(bottomPos - topPos, minSelectionSize);
-            return { x: rightPos - defaultThumbHeight / 2, y: topPos + height / 2 - defaultThumbWifth / 2, width: defaultThumbHeight, height: defaultThumbWifth };
-        }
-
-        function getTopThumbRect() {
-            var width = Math.max(rightPos - leftPos, minSelectionSize);
-            var height = Math.max(bottomPos - topPos, minSelectionSize);
-            return { x: leftPos + width / 2 - defaultThumbWifth / 2, y: topPos - defaultThumbHeight / 2, width: defaultThumbWifth, height: defaultThumbHeight };
-        }
-
-        function getBottomThumbRect() {
-            var width = Math.max(rightPos - leftPos, minSelectionSize);
-            var height = Math.max(bottomPos - topPos, minSelectionSize);
-            return { x: leftPos + width / 2 - defaultThumbWifth / 2, y: bottomPos - defaultThumbHeight / 2, width: defaultThumbWifth, height: defaultThumbHeight };
-        }
-
-        function redrawSelection() {
-            var width = Math.max(rightPos - leftPos, 0);
-            var height = Math.max(bottomPos - topPos, 0);
-
-            // clear
-            ctx.beginPath();
-            ctx.fillStyle = '#FFF';
-            ctx.rect(0, 0, canvasWidth, canvasHeight);
-            ctx.closePath();
-            ctx.fill();
-
-            // draw image
-            if (image) {
-                ctx.drawImage(image, canvaseMargin, canvaseMargin, canvasWidth - canvaseMargin * 2, canvasHeight - canvaseMargin * 2);
-            }
-
-            ctx.fillStyle = "rgba(20,20,20,0.6)";
-            ctx.beginPath();
-            ctx.rect(leftPos, topPos, width, height);
-            ctx.rect(canvasWidth, 0, -canvasHeight, canvasWidth);
-            ctx.fill();
-
-            // draft left thumb
-            ctx.beginPath();
-            ctx.fillStyle = hoverState === 'left' ? hoverThumbColor : defaultThumbColor;
-            var leftThumb = getLeftThumbRect();
-            ctx.rect(leftThumb.x, leftThumb.y, leftThumb.width, leftThumb.height);
-            ctx.closePath();
-            ctx.fill();
-
-            // draw top thumb
-            ctx.beginPath();
-            ctx.fillStyle = hoverState === 'top' ? hoverThumbColor : defaultThumbColor;
-            var topThumb = getTopThumbRect();
-            ctx.rect(topThumb.x, topThumb.y, topThumb.width, topThumb.height);
-            ctx.closePath();
-            ctx.fill();
-
-            // draw bottom thumb
-            ctx.beginPath();
-            ctx.fillStyle = hoverState === 'bottom' ? hoverThumbColor : defaultThumbColor;
-            var bottomThumb = getBottomThumbRect();
-            ctx.rect(bottomThumb.x, bottomThumb.y, bottomThumb.width, bottomThumb.height);
-            ctx.closePath();
-            ctx.fill();
-
-            // draw right thumb
-            ctx.beginPath();
-            ctx.fillStyle = hoverState === 'right' ? hoverThumbColor : defaultThumbColor;
-            var rightThumb = getRightThumbRect();
-            ctx.rect(rightThumb.x, rightThumb.y, rightThumb.width, rightThumb.height);
-            ctx.closePath();
-            ctx.fill();
-        }
+        var uploadBtnElm = document.getElementById('upload__btn');
+        var uploadElm = document.getElementById('upload');
+        var searchBtnElm = document.getElementById('search__btn');
+        var cancelBtnElm = document.getElementById('cancel__btn');
+        var heroPicImgElm = document.getElementById('hero__pic');
+        var uploadInputElm = document.getElementById('upload-input');
+        var resultTextElm = document.getElementById('result_text');
+        var resultsBodyElm = document.getElementById('results__body');
+        var mainBodyElm = document.getElementById('main__body');
+        var rightElm = document.getElementById('right');
 
         function dropHandler(ev) {
             // Prevent default behavior (Prevent file from being opened)
@@ -258,8 +63,11 @@
                         image.src = reader.result;
 
                         image.onload = () => {
-                            redrawSelection();
-                            imageUploaded();
+
+                            document.getElementById("main__body").classList.remove("hide");
+                            uploadElm.classList.add("hide");
+
+                            document.getElementById("hero__pic").src = image.src;
                         }
                     }
                 }
@@ -269,116 +77,132 @@
 
 
         async function startSearch() {
-            var width = Math.max(rightPos - leftPos, minSelectionSize);
-            var height = Math.max(bottomPos - topPos, minSelectionSize);
-
-            const imageData = canvas.toDataURL("image/jpeg");
+            rightElm.classList.remove('hide');
+            resultTextElm.innerHTML = 'searching..';
+            const imageData = image.src;
             var strImage = imageData.replace(/^data:image\/[a-z]+;base64,/, "");
 
             const requestData = {
                 "imageData": strImage,
                 "imageBounds": {
-                    "left": leftPos,
-                    "top": topPos,
-                    "width": width,
-                    "height": height
+                    "left": 0,
+                    "top": 0,
+                    "width": image.width,
+                    "height": image.height
                 }
             };
 
-            const response = await fetch('/api/facelookup/find', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                mode: 'cors',
-                cache: 'no-cache',
-                body: JSON.stringify(requestData)
-            });
-            console.log(await response.json());
+            try {
+                let response = await fetch('/api/facelookup/find', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    mode: 'cors',
+                    cache: 'no-cache',
+                    body: JSON.stringify(requestData),
+                    signal: AbortSignal.timeout(10000)
+                });
+
+                if (response.ok) {
+                    var result = await response.json();
+                    displayResult(result);
+                }
+
+            } catch (err) {
+
+                if (err.name === 'TimeoutError' || err.name === 'AbortError') {
+                    resultTextElm.innerHTML = 'Timeout error';
+                } else {
+                    resultTextElm.innerHTML = `ERROR: ${err}` + err.name;
+                }
+                
+            }
+            
+        }
+
+        function displayResult(response) {
+            if (response.status !== 0)
+            {
+                resultTextElm.innerHTML = response.statusDescription;
+                resultsBodyElm.innerHTML = '';
+                return;
+            }
+
+            resultTextElm.innerHTML = `${response.faces.length} match(es) found`;
+            var facesHtml = response.faces.reduce((acc, face) => 
+            {
+                const probability = (1 - face.distance) * 100;
+                return `<div class="results__card">
+                            <div class="card__pic">
+                                <img src="api/facelookup/get_image?id=${face.imageSource}" , alt="">
+                            </div>
+                            <div class="card__desc">
+                                <div class="card__probability">
+                                    <span class="label">Probability:</span>
+                                    <span class="value">${probability.toFixed(2)}%</span>
+                                </div>
+                                <div class="card__name">
+                                    <span class="label">Name:</span>
+                                    <span class="value">${face.name}</span>
+                                </div>
+                            </div>
+                        </div>
+                        ${acc}
+                        `;
+            }, '');
+            resultsBodyElm.innerHTML = facesHtml;
+
         }
 
         function dragOverHandler(ev) {
-            // Prevent default behavior (Prevent file from being opened)
             ev.preventDefault();
-            getElementByClassName('findFaceUploadPhoto').addClass('dragover');
+            uploadElm.classList.add('active');
         }
 
         function dragLeaveHandler(ev) {
-            // Prevent default behavior (Prevent file from being opened)
             ev.preventDefault();
-            getElementByClassName('findFaceUploadPhoto').removeClass('dragover');
-        }
-
-        function imageUploaded() {
-            showElement(getElementByClassName('search-btn'));
-            showElement(getElementByClassName('cancel-btn'));
-            hideElement(getElementByClassName('findFaceUploadPhoto'));
-            showElement(getElementByClassName('findFacePhotoContainer'));
-            updateCanvas();
-        }
-
-        function updateCanvas() {
-            var canvasRect = canvas.getBoundingClientRect();
-            offsetX = canvasRect.left;
-            offsetY = canvasRect.top;
-            canvasWidth = canvas.width;
-            canvasHeight = canvas.height;
+            uploadElm.classList.remove('active');
         }
 
 
         function init() {
-            getElementByClassName('search-btn').addEventListener('click', () => { })
 
-            var uploadElm = document.getElementById('upload-input');
-            getElementByClassName('findFaceUploadPhoto').addEventListener('click', () => {
-                uploadElm.click();
+            uploadBtnElm.addEventListener('click', () => {
+                uploadInputElm.click();                
             });
 
-            getElementByClassName('cancel-btn').addEventListener('click', () => {
-                showElement(getElementByClassName('findFaceUploadPhoto'));
-                hideElement(getElementByClassName('findFacePhotoContainer'));
-                hideElement(getElementByClassName('search-btn'));
-                hideElement(getElementByClassName('cancel-btn'));
+            cancelBtnElm.addEventListener('click', () => {
+                mainBodyElm.classList.add('hide');
+                uploadElm.classList.remove('hide');
+                rightElm.classList.add('hide');
+                uploadElm.classList.remove('active');
+                resultsBodyElm.innerHTML = '';
             });
 
-            getElementByClassName('search-btn').addEventListener('click', () => {
+            searchBtnElm.addEventListener('click', () => {
                 startSearch();
             });
 
-            canvas = document.getElementById("photoCanvas");
-            ctx = canvas.getContext("2d");
-            updateCanvas();
 
-            topPos = canvaseMargin;
-            leftPos = canvaseMargin;
-            rightPos = canvasWidth - canvaseMargin;
-            bottomPos = canvasHeight - canvaseMargin;
+            // correct
+            uploadInputElm.addEventListener('change', function (e) {
+                var reader = new FileReader();
+                reader.onload = (event) => {
+                    image = new Image();
+                    image.onload = function () {
+                        
+                        uploadElm.classList.add("hide");
+                        mainBodyElm.classList.remove("hide")
 
-            if (canvas) {
-
-                var leftThumb = getLeftThumbRect();
-                var topThumb = getTopThumbRect();
-
-                redrawSelection();
-                // listen for mouse events
-                canvas.onmousedown = myDown;
-                document.body.onmouseup = myUp;
-                canvas.onmousemove = myMove;
-                document.body.onmouseleave = myMouseLeave;
-
-                uploadElm.addEventListener('change', function (e) {
-                    var reader = new FileReader();
-                    reader.onload = (event) => {
-                        image = new Image();
-                        image.onload = function () {
-                            redrawSelection();
-                        }
-                        image.src = event.target.result;
-                        imageUploaded();
+                        heroPicImgElm.src = image.src;
                     }
-                    reader.readAsDataURL(e.target.files[0]);
-                });
-            }
+                    image.src = event.target.result;
 
-        };
+                }
+                reader.readAsDataURL(e.target.files[0]);
+            });
+
+        }
+
         init();
     </script>
 }
